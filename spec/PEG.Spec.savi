@@ -1,0 +1,6 @@
+:class PEG.Spec
+  :is Spec
+  :const describes: "PEG"
+
+  :it "has a placeholder method for demonstrating testing"
+    assert: PEG.placeholder == True
