@@ -1,0 +1,116 @@
+// In this file we implement a simple JSON parser as a PEG grammar for testing,
+// not because we think it's a great idea to use PEG to parse JSON, but because
+// JSON is a very simple grammar and many people are very familiar with it.
+// Also, it has many common constructs (numbers, strings, arrays, etc.) that
+// people might want to use in the actual language they're intending to parse,
+// so it serves as a good real-world example of how to use this library,
+// and how Parsing Expression Grammars work in general.
+
+// This type declares the different token kinds that we will parse.
+// You don't necessarily need to use an enum for this, but it's a solid choice
+// to do so, because they are represented very efficiently at runtime.
+// In theory you can use any `val` that implements `IntoString` for printing.
+:enum _JSON.Token
+  :member Null   0
+  :member True   1
+  :member False  2
+  :member Number 3
+  :member String 4
+  :member Pair   5
+  :member Object 6
+  :member Array  7
+
+// Here we declare the grammar itself, which describes what patterns to check
+// for in the language and how to tag them with tokens when we find them.
+// We use `PEG.DSL` here to instantiate patterns succinctly, using `@`-calls
+// to create new patterns from scratch, method calls to create outer patterns
+// from an inner pattern, and operator sugar to compose patterns together.
+:class val _JSON.Grammar
+  :is PEG.Grammar(_JSON.Token)
+  :new val
+    // Define what whitespace looks like.
+    whitespace = @char(' ') / @char('\t') / @char('\r') / @char('\n')
+    s = whitespace.repeat
+
+    // The root of a JSON document is an array or an object,
+    // optionally surrounded by some whitespace.
+    array = @declare
+    object = @declare
+    @root = (s >> (array / object) >> s).then_eof
+
+    // Define what a number looks like.
+    digit19 = @range('1', '9')
+    digit = @range('0', '9')
+    digits = digit.repeat(1)
+    int = (
+      (@char('-') >> digit19 >> digit.repeat)
+      / (@char('-') >> digit)
+      / (digit19 >> digit.repeat)
+      / digit
+    )
+    frac = @char('.') >> digits
+    exp = (@char('e') / @char('E')) >> (@char('+') / @char('-')).maybe >> digits
+    number = (
+      int >> frac.maybe >> exp.maybe
+    ).token(_JSON.Token.Number)
+
+    // Define what a string looks like.
+    hex = digit / @range('a', 'f') / @range('A', 'F')
+    string_char = (
+      @str("\\\"") / @str("\\\\") / @str("\\/")
+      / @str("\\b") / @str("\\f") / @str("\\n") / @str("\\r") / @str("\\t")
+      / (@str("\\u") >> hex >> hex >> hex >> hex)
+      / (@char('"').not >> @char('\\').not >> @any)
+    )
+    string = (
+      @char('"')
+      >> string_char.repeat.token(_JSON.Token.String)
+      >> @char('"')
+    )
+
+    // Define what constitutes a value.
+    value = (
+      @str("null").token(_JSON.Token.Null)
+      / @str("true").token(_JSON.Token.True)
+      / @str("false").token(_JSON.Token.False)
+      / number / string
+      / array / object
+    )
+
+    // Define what an array is, in terms of zero or more values.
+    values = value >> s >> (@char(',') >> s >> value >> s).repeat
+    array.define(
+      (
+        @char('[')
+        >> s >> values.maybe
+        >> s >> @char(']')
+      ).token(_JSON.Token.Array)
+    )
+
+    // Define what an object is, in terms of zero or more key/value pairs.
+    pair = (string >> s >> @char(':') >> s >> value).token(_JSON.Token.Pair)
+    pairs = pair >> s >> (@char(',') >> s >> pair >> s).repeat
+    object.define(
+      (
+        @char('{')
+        >> s >> pairs.maybe
+        >> s >> @char('}')
+      ).token(_JSON.Token.Object)
+    )
+
+// Finally, we also need to declare a builder that can assemble the stream
+// of tokens into some output type. In this case our output type will be
+// a simple string, printing the offset range and kind of each token.
+//
+// In a real-world use case, instead of outputting a `String`, you'd likely
+// output an AST data structure of some kind instead, or if you're building
+// a very simple interpreter, perhaps you could directly build the result value.
+:class _JSON.TokenPrinter
+  :is PEG.Parser.Builder(_JSON.Token, String)
+
+  :fun ref build(tokens Array(PEG.Token(_JSON.Token))'val) String
+    out = String.new_iso
+    tokens.each -> (token |
+      out << "\(token.start)-\(token.end): \(token.kind)\n"
+    )
+    --out

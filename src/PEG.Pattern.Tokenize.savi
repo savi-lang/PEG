@@ -1,0 +1,40 @@
+// `PEG.Pattern.Tokenize` is used to mark matches of a pattern with a token.
+//
+// If the child pattern also produces tokens, those tokens will appear
+// after the token that was created by this `PEG.Pattern.Tokenize`, and these
+// can be distinguished in the token stream by the fact that all such tokens
+// will have offset ranges that are sub-ranges of the offset range of the prior.
+//
+// Returns the result of the child pattern's parsing, possibly preceded with
+// a new token whose symbol is the symbolic kind assigned to this pattern.
+:class PEG.Pattern.Tokenize(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let child PEG.Pattern(T)
+  :let kind T
+  :new (@child, @kind)
+
+  :fun description: "???"
+
+  :is IntoString
+  :fun into_string_space USize: @kind.into_string_space
+  :fun into_string(out String'iso): @kind.into_string(--out)
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    result = @child.match(source, offset, state)
+    return result if result.is_fail
+
+    // If tokenizing is not enabled, return without tokenizing.
+    return result if !state.should_tokenize
+
+    tokens = Array(PEG.Token(T)).new_iso(result.tokens_count + 1)
+    tokens << PEG.Token(T).new(@kind, offset, offset + result.length)
+
+    _Result(T).success(
+      result.length
+      result.maybe_append_tokens_into(--tokens)
+    )

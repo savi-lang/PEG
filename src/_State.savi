@@ -1,0 +1,6 @@
+:struct _State(T PEG.Token.Kind)
+  :let should_tokenize Bool
+  :new (@should_tokenize = True)
+
+  :fun ref observe_fail(offset USize, pattern PEG.Pattern(T))
+    None // TODO: implement

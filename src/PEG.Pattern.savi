@@ -1,0 +1,15 @@
+:trait box PEG.Pattern(T PEG.Token.Kind)
+  :copies PEG.DSL.Methods(T)
+
+  :fun description String
+  :is IntoString
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+
+  :fun val match(source, offset, state)
+    // TODO: Add tracing?
+    @check_match(source, offset, state)

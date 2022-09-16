@@ -1,0 +1,33 @@
+:: `PEG.Pattern.Not` is used for negative-lookahead.
+::
+:: Parsing will fail if the child pattern parsing succeeds.
+:: Otherwise, the pattern succeeds, consuming zero bytes.
+::
+:: Composing two `PEG.Pattern.Not` instances inside one another is a
+:: valid strategy for positive lookahead.
+:class PEG.Pattern.Not(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let child PEG.Pattern(T)
+  :new (@child)
+
+  :fun description: "excluding \(@child.description)"
+
+  :is IntoString
+  :fun into_string_space USize
+    @child.into_string_space + 1
+  :fun into_string(out String'iso) String'iso
+    out.push_byte('~')
+    @child.into_string(--out)
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    result = @child.match(source, offset, state)
+    if result.is_fail (
+      _Result(T).success(0)
+    |
+      _Result(T).fail(result.length, @)
+    )

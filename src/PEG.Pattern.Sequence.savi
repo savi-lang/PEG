@@ -1,0 +1,73 @@
+:: `PEG.Pattern.Sequence` is used to specify a consecutive sequence of patterns.
+::
+:: Parsing will fail if any child pattern fails, returning that failure result.
+:: Otherwise, succeeds and consumes all bytes from all child patterns.
+:class PEG.Pattern.Sequence(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let children Array(PEG.Pattern(T))
+  :new (@children)
+
+  :: Override this DSL operator to accrue into the existing sequence.
+  :fun ">>"(other PEG.Pattern(T))
+    children ref = @children.clone
+    children << other
+    @new(--children)
+
+  :fun description
+    if (@children.size < 2) (
+      try (@children[0]!.description | "empty sequence!")
+    |
+      out = String.new_iso
+      @children.each_with_index -> (child, index |
+        if index.is_zero (
+          out << "first "
+          out << child.description
+        |
+          out << ", then "
+          out << child.description
+        )
+      )
+      --out
+    )
+
+  :is IntoString
+  :fun into_string_space USize
+    space = (@children.size - 1) * 4 + 2
+    @children.each -> (child | space += child.into_string_space)
+    space
+  :fun into_string(out String'iso) String'iso
+    out << "("
+    @children.each_with_index -> (child, index |
+      if index.is_nonzero (out << " >> ")
+      out = child.into_string(--out)
+    )
+    out << ")"
+    --out
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    total_length USize = 0
+    tokens (Array(PEG.Token(T))'iso | None) = None
+
+    @children.each -> (child |
+      current_offset = offset + total_length
+
+      result = child.match(source, current_offset, state)
+      total_length += result.length
+
+      // Fail as soon as one child pattern fails.
+      if result.is_fail (
+        state.observe_fail(current_offset, child)
+        return result.with_length(total_length)
+      )
+
+      if state.should_tokenize (
+        tokens = result.maybe_append_tokens_into(--tokens)
+      )
+    )
+
+    _Result(T).success(total_length, --tokens)

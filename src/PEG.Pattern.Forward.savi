@@ -1,0 +1,38 @@
+:: `PEG.Pattern.Forward` is used to create a forward declaration,
+:: such as when defining a pattern that will be used recursively with another.
+::
+:: There is no child pattern present at declaration, so one must be added
+:: later by calling define exactly once before the pattern is used to parse.
+::
+:: Returns the result of the child pattern's parsing.
+::
+:: If the pattern is used for parsing without a child pattern defined,
+:: the pattern will always fail to match any input.
+:class PEG.Pattern.Forward(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :var child (PEG.Pattern(T) | None): None
+  :new
+
+  :fun description: try (
+    @child.not!(None).description
+  |
+    "(undefined forward-declared pattern)"
+  )
+
+  :fun ref define(child PEG.Pattern(T)): @child = child
+
+  :is IntoString
+  :fun into_string_space USize: "declare".into_string_space
+  :fun into_string(out String'iso): "declare".into_string(--out)
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    try (
+      @child.as!(PEG.Pattern(T)'val).match(source, offset, state)
+    |
+      _Result(T).fail(0, @)
+    )

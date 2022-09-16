@@ -1,0 +1,74 @@
+:: `PEG.Pattern.Choice` is used to specify an ordered choice of patterns.
+::
+:: Returns the result of the first child pattern that matched.
+:: Returns the longest-length failure of all child patterns fail.
+:class PEG.Pattern.Choice(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let children Array(PEG.Pattern(T))
+  :new (@children)
+
+  :: Override this DSL operator to accrue into the existing choice.
+  :fun "/"(other PEG.Pattern(T))
+    children ref = @children.clone
+    children << other
+    @new(--children)
+
+  :fun description
+    if (@children.size < 2) (
+      try (@children[0]!.description | "empty choice!")
+    |
+      out = String.new_iso
+      @children.each_with_index -> (child, index |
+        if index.is_zero (
+          out << "either "
+          out << child.description
+        |
+          out << ", or "
+          out << child.description
+        )
+      )
+      --out
+    )
+
+  :is IntoString
+  :fun into_string_space USize
+    space = (@children.size - 1) * 3 + 2
+    @children.each -> (child | space += child.into_string_space)
+    space
+  :fun into_string(out String'iso) String'iso
+    out << "("
+    @children.each_with_index -> (child, index |
+      if index.is_nonzero (out << " / ")
+      out = child.into_string(--out)
+    )
+    out << ")"
+    --out
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    fail_result = _Result(T).fail(0, @)
+
+    // Try each child pattern in order, looking for the first successful match.
+    @children.each_with_index -> (child, child_index |
+      result = child.match(source, offset, state)
+
+      // On first success, return the result.
+      if result.is_success (
+        return result
+      )
+
+      // On failure, record the info if this is the longest failure yet seen.
+      if (result.length > fail_result.length) (
+        fail_result = result
+      )
+    )
+
+    state.observe_fail(
+      offset + fail_result.length
+      try (fail_result.fail_pattern! | @)
+    )
+    fail_result

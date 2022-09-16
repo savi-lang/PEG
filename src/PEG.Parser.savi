@@ -1,0 +1,24 @@
+:trait PEG.Parser.Builder(T PEG.Token.Kind, O Any'any)
+  :fun ref build(tokens Array(PEG.Token(T))'val) O
+  :fun ref reset: None
+
+:class PEG.Parser(T PEG.Token.Kind, O Any'any)
+  :let grammar PEG.Grammar(T)
+  :let builder PEG.Parser.Builder(T, O)
+  :new (@grammar, @builder)
+
+  :var last_parse_byte_size USize: 0
+  :var last_parse_fail_pattern (PEG.Pattern(T)'val | None): None
+
+  :fun ref parse!(source, offset = 0) O
+    @builder.reset
+
+    result = @grammar.root.match(source, offset, _State(T).new)
+    @last_parse_byte_size = result.length
+
+    try (
+      @builder.build(result.success_tokens!)
+    |
+      @last_parse_fail_pattern = result.fail_pattern!
+      error!
+    )

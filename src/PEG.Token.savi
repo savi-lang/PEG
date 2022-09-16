@@ -1,0 +1,8 @@
+:struct val PEG.Token(T PEG.Token.Kind)
+  :let kind T
+  :let start USize
+  :let end USize
+  :new val (@kind, @start, @end)
+
+:trait val PEG.Token.Kind
+  :is IntoString

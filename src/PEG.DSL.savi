@@ -1,0 +1,71 @@
+:: A trait of convenience methods for creating patterns.
+::
+:: This DSL is meant for use in composing a `PEG.Grammar`.
+:trait PEG.DSL(T PEG.Token.Kind)
+  :: Introduce a forward-declaration of a pattern to be defined later.
+  :: This allows patterns to be a recursive/cyclical graph rather than acyclic.
+  :fun non declare: PEG.Pattern.Forward(T).new
+
+  :: Check for any Unicode codepoint, failing at end of input or invalid data.
+  :fun non any: PEG.Pattern.UnicodeAny(T)
+
+  :: Check for exact matches with the given literal string.
+  :: As an optimization, returns `PEG.Pattern.Byte` if the string is one byte.
+  :fun non str(text String)
+    try (
+      if (text.size == 1) (
+        pattern = PEG.Pattern.Byte(T).new(text.byte_at!(0))
+        return pattern // TODO: make these two lines a single line
+      )
+    )
+    PEG.Pattern.Literal(T).new(text)
+
+  :: Check for exact matches with the given Unicode codepoint.
+  :: As an optimization, returns `PEG.Pattern.Byte` if the string is one byte.
+  :fun non char(codepoint U32)
+    if (codepoint < 0x80) (
+      return PEG.Pattern.Byte(T).new(codepoint.u8)
+    )
+    PEG.Pattern.Literal(T).new("\(codepoint.format.unicode)")
+
+  :: Check for a given range of Unicode codepoints, inclusive of both ends.
+  :fun non range(min, max): PEG.Pattern.UnicodeRange(T).new(min, max)
+
+:: A trait of convenience methods/operators for composing patterns based
+:: on a given base pattern (the receiver of the method call).
+::
+:: This DSL is meant for use in composing a `PEG.Grammar`.
+:trait PEG.DSL.Methods(T PEG.Token.Kind)
+  // TODO: Remove the need for this duplication with `PEG.Pattern`, without
+  // causing the compiler to enter an infinite recursion of trait copying.
+  :fun description String
+  :is IntoString
+  :fun val check_match(source String, offset USize, state _State(T)) _Result(T)
+  :fun val match(source String, offset USize, state _State(T)) _Result(T)
+  // TODO: Remove the above lines ^
+
+  :: Chain the given pattern after this one, in a sequence.
+  :fun ref ">>"(other): PEG.Pattern.Sequence(T).new([@, other])
+
+  :: Allow an ordered choice between this pattern and the given other one,
+  :: instructing the parser to try to match the other one if this one fails.
+  :fun ref "/"(other): PEG.Pattern.Choice(T).new([@, other])
+
+  :: Use this pattern for "negative lookahead", checking what's ahead
+  :: to ensure it doesn't match the pattern, without actually consuming it.
+  :: Chain this method twice to get "positive lookahead", checking the opposite.
+  :fun ref not: PEG.Pattern.Not(T).new(@)
+  // TODO: :fun ref "~": PEG.Pattern.Not(T).new(@)
+
+  :: Check for this pattern to repeat at least the given number of times,
+  :: consuming it as many times as needed until it no longer matches.
+  :fun ref repeat(min USize = 0): PEG.Pattern.Repeat(T).new(@, min)
+
+  :: Allow this pattern to be optional, avoiding failure if it doesn't match.
+  :fun ref maybe: PEG.Pattern.Optional(T).new(@)
+
+  :: Follow this pattern by checking to ensure that the end of input is reached.
+  :fun ref then_eof: PEG.Pattern.EOF(T).new(@)
+
+  :: When this pattern is matched, mark a token for the content it matched.
+  :fun ref token(kind T): PEG.Pattern.Tokenize(T).new(@, kind)
