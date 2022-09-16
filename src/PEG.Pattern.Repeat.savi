@@ -1,0 +1,61 @@
+:: `PEG.Pattern.Repeat` is used to specify a pattern that can or must repeat
+:: for a specified minimum number of occurrences.
+::
+:: When the child pattern eventually fails to match, fail overall if the
+:: minimum number of occurrences has not yet been met.
+:: Otherwise, succeed overall, consuming all bytes from the occurrences that
+:: succeeded (not consuming any bytes from the final failing occurrence).
+:: Like `PEG.Pattern.Optional`, this pattern will never fail if `min` is zero.
+:class PEG.Pattern.Repeat(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let child PEG.Pattern(T)
+  :let min USize
+  :new (@child, @min = 0)
+
+  :fun description: "\(@min) or more occurrences of \(@child.description)"
+
+  :is IntoString
+  :fun into_string_space USize
+    @child.into_string_space + ".repeat()".size + @min.into_string_space
+  :fun into_string(out String'iso) String'iso
+    out = @child.into_string(--out)
+    out << ".repeat("
+    out = @min.into_string(--out)
+    out << ")"
+    --out
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    total_length USize = 0
+    tokens (Array(PEG.Token(T))'iso | None) = None
+    count USize = 0
+    while True (
+      result = @child.match(source, offset + total_length, state)
+
+      // If the child pattern failed to match, either return early with the
+      // failure or end the loop successfully, depending on whether we've
+      // already met the specified minimum number of occurrences.
+      if result.is_fail (
+        break if (count >= @min)
+
+        return (result + total_length)
+      )
+
+      // Add to our running total of consumed bytes and capture tokens (if any).
+      total_length += result.length
+      if state.should_tokenize (
+        tokens = result.maybe_append_tokens_into(--tokens)
+      )
+
+      // Increase the occurrence counter and consider breaking early if we are
+      // parsing zero-length patterns and we've already met our minimum.
+      // This prevents zero-length matches from being able to infinitely loop.
+      count += 1
+      break if (count > @min && result.length == 0)
+    )
+
+    _Result(T).success(total_length, --tokens)

@@ -2,5 +2,60 @@
   :is Spec
   :const describes: "PEG"
 
-  :it "has a placeholder method for demonstrating testing"
-    assert: PEG.placeholder == True
+  :it "can parse JSON content using a JSON grammar"
+    parser = PEG.Parser(_JSON.Token, String).new(
+      _JSON.Grammar.new
+      _JSON.TokenPrinter.new
+    )
+
+    // TODO: Use one big string once the Savi formatter gets fixed to not complain.
+    assert: parser.parse!(String.join([
+      <<<{>>>
+      <<<  "Hello": "World!",>>>
+      <<<  "from": {>>>
+      <<<    "name": "savi-lang/PEG",>>>
+      <<<    "easy-as": [1, 2, 3],>>>
+      <<<    "nifty": true,>>>
+      <<<    "overcomplicated": false,>>>
+      <<<    "worse-than": null,>>>
+      <<<    "problems": [],>>>
+      <<<    "utf8": ["Д", "Ⴃ", "𐀀"]>>>
+      <<<  }>>>
+      <<<}>>>
+    ], "\n")) == String.join([
+      "0-222: _JSON.Token.Object"   // {
+      "4-21: _JSON.Token.Pair"
+      "5-10: _JSON.Token.String"    // "Hello":
+      "14-20: _JSON.Token.String"   // "World!",
+      "25-220: _JSON.Token.Pair"
+      "26-30: _JSON.Token.String"   // "from":
+      "33-220: _JSON.Token.Object"  // {
+      "39-62: _JSON.Token.Pair"
+      "40-44: _JSON.Token.String"   // "name":
+      "48-61: _JSON.Token.String"   // "savi-lang/PEG",
+      "68-88: _JSON.Token.Pair"
+      "69-76: _JSON.Token.String"   // "easy-as":
+      "79-88: _JSON.Token.Array"    // [
+      "80-81: _JSON.Token.Number"   // 1,
+      "83-84: _JSON.Token.Number"   // 2,
+      "86-87: _JSON.Token.Number"   // 3],
+      "94-107: _JSON.Token.Pair"
+      "95-100: _JSON.Token.String"  // "nifty":
+      "103-107: _JSON.Token.True"   // true,
+      "113-137: _JSON.Token.Pair"
+      "114-129: _JSON.Token.String" // "overcomplicated":
+      "132-137: _JSON.Token.False"  // false,
+      "143-161: _JSON.Token.Pair"
+      "144-154: _JSON.Token.String" // "worse-than":
+      "157-161: _JSON.Token.Null"   // null,
+      "167-181: _JSON.Token.Pair"
+      "168-176: _JSON.Token.String" // "problems":
+      "179-181: _JSON.Token.Array"  // [],
+      "187-216: _JSON.Token.Pair"
+      "188-192: _JSON.Token.String" // "utf8":
+      "195-216: _JSON.Token.Array"  // [
+      "197-199: _JSON.Token.String" // (string with a 2-byte character),
+      "203-206: _JSON.Token.String" // (string with a 3-byte character),
+      "210-214: _JSON.Token.String" // (string with a 4-byte character)]
+      ""                            // }}
+    ], "\n")

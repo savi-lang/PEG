@@ -1,0 +1,70 @@
+:struct val _Result(T PEG.Token.Kind)
+  :let length USize
+  :let _data (PEG.Pattern(T)'val | Array(PEG.Token(T))'val | PEG.Token(T) | None)
+
+  :new val _new(@length, @_data)
+
+  :new val success(
+    @length
+    tokens (Array(PEG.Token(T))'val | PEG.Token(T) | None) = None
+  )
+    @_data = tokens
+
+  :new val fail(
+    @length
+    pattern PEG.Pattern(T)'val
+  )
+    @_data = pattern
+
+  :fun is_fail: @_data <: PEG.Pattern(T)'val
+  :fun is_success
+    @is_fail.not
+
+  :fun tokens_count USize
+    data = @_data
+    case (
+    | data <: Array(PEG.Token(T))'val | data.size
+    | data <: PEG.Token(T)            | USize[1] // TODO: remove explicit USize
+    |                                   USize[0] // TODO: remove explicit USize
+    )
+
+  :fun success_tokens! Array(PEG.Token(T))'val
+    data = @_data
+    return data if (data <: Array(PEG.Token(T))'val)
+    return [data] if (data <: PEG.Token(T))
+    []
+
+  :fun fail_pattern!: @_data.as!(PEG.Pattern(T))
+
+  :fun with_length(length)
+    _Result(T)._new(length, @_data)
+
+  :fun "+"(additional_length USize)
+    _Result(T)._new(@length + additional_length, @_data)
+
+  :: Append any tokens in this result (if present) into the given list,
+  :: returning either the given list or a new list if no list was given.
+  ::
+  :: If the are no result tokens, the given argument will be returned unchanged,
+  :: including returning `None` if no list was given.
+  :fun maybe_append_tokens_into(
+    list (Array(PEG.Token(T))'iso | None)
+  ) (Array(PEG.Token(T))'iso | None)
+    data = @_data
+    case (
+    | data <: PEG.Token(T) |
+      if (list <: Array(PEG.Token(T))'iso) (
+        list << data
+      |
+        new_list = Array(PEG.Token(T)).new_iso
+        new_list << data
+        list = --new_list
+      )
+    | data <: Array(PEG.Token(T))'val |
+      if (list <: Array(PEG.Token(T))'iso) (
+        data.each -> (token | list << token)
+      |
+        list = data.clone()
+      )
+    )
+    --list

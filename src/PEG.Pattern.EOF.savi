@@ -1,0 +1,36 @@
+:: `PEG.Pattern.EOF` specifies that the end of the source must follow
+:: after the child pattern has been parsed successfully.
+::
+:: If the child pattern doesn't match, its result is returned.
+:: Fails if the cursor hasn't reached the end of the source.
+:: Otherwise, the result of the child pattern is returned.
+:class PEG.Pattern.EOF(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let child PEG.Pattern(T)
+  :new (@child)
+
+  :fun description: "\(@child.description) followed by end-of-file"
+
+  :is IntoString
+  :fun into_string_space USize: @child.into_string_space + ".then_eof".size
+  :fun into_string(out String'iso)
+    out = @child.into_string(--out)
+    out << ".then_eof"
+    --out
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    result = @child.match(source, offset, state)
+    return result if result.is_fail
+
+    // Fail if the end of the source hasn't been reached yet.
+    if (offset + result.length != source.size) (
+      state.observe_fail(offset + result.length + 1, @child)
+      return _Result(T).fail(0, @)
+    )
+
+    result

@@ -1,0 +1,33 @@
+:: `PEG.Pattern.Optional` specifies that a pattern that can either match or not.
+::
+:: If the child pattern doesn't match, zero bytes are consumed.
+:: Otherwise, the result of the child pattern is returned directly.
+:: This pattern will never fail.
+:class PEG.Pattern.Optional(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let child PEG.Pattern(T)
+  :new (@child)
+
+  :fun description: "optional \(@child.description)"
+
+  :is IntoString
+  :fun into_string_space USize
+    @child.into_string_space + ".maybe".size
+  :fun into_string(out String'iso) String'iso
+    out = @child.into_string(--out)
+    out << ".maybe"
+    --out
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    result = @child.match(source, offset, state)
+    return result if result.is_success
+
+    // Even though the child failed, the `PEG.Pattern.Optional` node
+    // counts as a success because the child was optional.
+    state.observe_fail(offset + result.length, @child)
+    _Result(T).success(0)

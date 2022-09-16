@@ -1,0 +1,4 @@
+:trait val PEG.Grammar(T PEG.Token.Kind)
+  :copies PEG.DSL(T)
+
+  :let root PEG.Pattern(T)

@@ -1,0 +1,28 @@
+:: `PEG.Pattern.Literal` is used to consume a specific string.
+::
+:: Parsing will fail if the bytes in the stream don't exactly match the string.
+:: Otherwise, the pattern succeeds, consuming the matched bytes.
+:class PEG.Pattern.Literal(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let string String
+  :let _bytes Bytes // TODO: remove this
+  :new (@string)
+    @_bytes = @string.as_bytes
+
+  :fun description: @string
+
+  :is IntoString
+  :fun into_string_space USize: @string.into_string_space
+  :fun into_string(out String'iso): @string.into_string(--out)
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    if source.is_byte_slice_equal(offset, @_bytes, 0, @_bytes.size) (
+      _Result(T).success(@_bytes.size)
+    |
+      _Result(T).fail(0, @)
+    )

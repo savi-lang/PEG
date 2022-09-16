@@ -1,0 +1,32 @@
+:: `PEG.Pattern.Byte` is used to consume a single specific byte.
+::
+:: Parsing will fail if the next byte in the string doesn't match that byte.
+:: Otherwise, the pattern succeeds, consuming the matched bytes.
+:class PEG.Pattern.Byte(T PEG.Token.Kind)
+  :is PEG.Pattern(T)
+
+  :let expected U8
+  :new (@expected)
+
+  :fun description: "\(@expected.format.unicode)"
+
+  :is IntoString
+  :fun into_string_space USize
+    "char('')".size + @expected.format.printable_ascii.into_string_space
+  :fun into_string(out String'iso)
+    out << "char('"
+    out = @expected.format.printable_ascii.into_string(--out)
+    out << "')"
+    --out
+
+  :fun val check_match(
+    source String
+    offset USize
+    state _State(T)
+  ) _Result(T)
+    try (
+      error! if (source.byte_at!(offset) != @expected)
+      _Result(T).success(1)
+    |
+      _Result(T).fail(0, @)
+    )
