@@ -8,21 +8,20 @@
       _JSON.TokenPrinter.new
     )
 
-    // TODO: Use one big string once the Savi formatter gets fixed to not complain.
-    assert: parser.parse!(String.join([
-      <<<{>>>
-      <<<  "Hello": "World!",>>>
-      <<<  "from": {>>>
-      <<<    "name": "savi-lang/PEG",>>>
-      <<<    "easy-as": [1, 2, 3],>>>
-      <<<    "nifty": true,>>>
-      <<<    "overcomplicated": false,>>>
-      <<<    "worse-than": null,>>>
-      <<<    "problems": [],>>>
-      <<<    "utf8": ["Д", "Ⴃ", "𐀀"]>>>
-      <<<  }>>>
-      <<<}>>>
-    ], "\n")) == String.join([
+    assert: parser.parse!(<<<
+      {
+        "Hello": "World!",
+        "from": {
+          "name": "savi-lang/PEG",
+          "easy-as": [1, 2, 3],
+          "nifty": true,
+          "overcomplicated": false,
+          "worse-than": null,
+          "problems": [],
+          "utf8": ["Д", "Ⴃ", "𐀀"]
+        }
+      }
+    >>>) == String.join([
       "0-222: _JSON.Token.Object"   // {
       "4-21: _JSON.Token.Pair"
       "5-10: _JSON.Token.String"    // "Hello":
