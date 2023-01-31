@@ -36,14 +36,13 @@
     space = (@children.size - 1) * 4 + 2
     @children.each -> (child | space += child.into_string_space)
     space
-  :fun into_string(out String'iso) String'iso
+  :fun into_string(out String'ref) None
     out << "("
     @children.each_with_index -> (child, index |
       if index.is_nonzero (out << " >> ")
-      out = child.into_string(--out)
+      child.into_string(out)
     )
     out << ")"
-    --out
 
   :fun val check_match(
     source String

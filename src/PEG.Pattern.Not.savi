@@ -16,9 +16,9 @@
   :is IntoString
   :fun into_string_space USize
     @child.into_string_space + 1
-  :fun into_string(out String'iso) String'iso
+  :fun into_string(out String'ref) None
     out.push_byte('~')
-    @child.into_string(--out)
+    @child.into_string(out)
 
   :fun val check_match(
     source String

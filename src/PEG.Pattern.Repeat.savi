@@ -18,12 +18,11 @@
   :is IntoString
   :fun into_string_space USize
     @child.into_string_space + ".repeat()".size + @min.into_string_space
-  :fun into_string(out String'iso) String'iso
-    out = @child.into_string(--out)
+  :fun into_string(out String'ref) None
+    @child.into_string(out)
     out << ".repeat("
-    out = @min.into_string(--out)
+    @min.into_string(out)
     out << ")"
-    --out
 
   :fun val check_match(
     source String
