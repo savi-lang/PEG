@@ -9,7 +9,7 @@
 
   :is IntoString
   :fun into_string_space USize: "any".into_string_space
-  :fun into_string(out String'iso): "any".into_string(--out)
+  :fun into_string(out String'ref): "any".into_string(out)
 
   :fun val check_match(
     source String

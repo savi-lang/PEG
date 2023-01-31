@@ -14,10 +14,9 @@
 
   :is IntoString
   :fun into_string_space USize: @child.into_string_space + ".then_eof".size
-  :fun into_string(out String'iso)
-    out = @child.into_string(--out)
+  :fun into_string(out String'ref) None
+    @child.into_string(out)
     out << ".then_eof"
-    --out
 
   :fun val check_match(
     source String

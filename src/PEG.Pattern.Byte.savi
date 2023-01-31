@@ -13,11 +13,10 @@
   :is IntoString
   :fun into_string_space USize
     "char('')".size + @expected.format.printable_ascii.into_string_space
-  :fun into_string(out String'iso)
+  :fun into_string(out String'ref) None
     out << "char('"
-    out = @expected.format.printable_ascii.into_string(--out)
+    @expected.format.printable_ascii.into_string(out)
     out << "')"
-    --out
 
   :fun val check_match(
     source String

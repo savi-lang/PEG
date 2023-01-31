@@ -18,13 +18,12 @@
     "range(, )".size
     + @min.into_string_space
     + @max.into_string_space
-  :fun into_string(out String'iso)
+  :fun into_string(out String'ref) None
     out << "range("
-    out = @min.into_string(--out)
+    @min.into_string(out)
     out << ", "
-    out = @max.into_string(--out)
+    @max.into_string(out)
     out << ")"
-    --out
 
   :fun val check_match(
     source String

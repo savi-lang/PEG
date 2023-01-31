@@ -14,10 +14,9 @@
   :is IntoString
   :fun into_string_space USize
     @child.into_string_space + ".maybe".size
-  :fun into_string(out String'iso) String'iso
-    out = @child.into_string(--out)
+  :fun into_string(out String'ref) None
+    @child.into_string(out)
     out << ".maybe"
-    --out
 
   :fun val check_match(
     source String

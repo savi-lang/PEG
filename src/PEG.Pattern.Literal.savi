@@ -14,7 +14,7 @@
 
   :is IntoString
   :fun into_string_space USize: @string.into_string_space
-  :fun into_string(out String'iso): @string.into_string(--out)
+  :fun into_string(out String'ref): @string.into_string(out)
 
   :fun val check_match(
     source String
