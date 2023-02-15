@@ -31,19 +31,20 @@
     state _State(T)
   ) _Result(T)
     // Use UTF8 decoding to get the next codepoint.
-    codepoint U32 = 0
-    utf8_state U8 = 0
-    source.each_byte_with_index(offset, offset + 4) -> (byte, current_offset |
-      codepoint = UTF8Decoding.read_byte_into_codepoint(byte, utf8_state, codepoint)
-      utf8_state = UTF8Decoding.next_state(byte, utf8_state)
+    utf8_state = String.DecodeUTF8.State.new
+    try (
+      source.each_byte_with_index(offset, offset + 4) -> (byte, current_offset |
+        utf8_state = String.DecodeUTF8.read_byte!(byte, utf8_state)
 
-      // If we reach state zero, it means we've decoded a valid codepoint.
-      // So we'll check if it's in the range of codepoints we were expecting.
-      if utf8_state.is_zero (
-        if (codepoint >= @min && codepoint <= @max) (
-          return _Result(T).success(current_offset - offset + 1)
-        |
-          return _Result(T).fail(0, @)
+        // If we reach state zero, it means we've decoded a valid codepoint.
+        // So we'll check if it's in the range of codepoints we were expecting.
+        if utf8_state.is_done (
+          codepoint = utf8_state.codepoint
+          if (codepoint >= @min && codepoint <= @max) (
+            return _Result(T).success(current_offset - offset + 1)
+          |
+            return _Result(T).fail(0, @)
+          )
         )
       )
     )
