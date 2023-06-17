@@ -13,7 +13,7 @@
   :: As an optimization, returns `PEG.Pattern.Byte` if the string is one byte.
   :fun non str(text String)
     try (
-      if (text.size == 1) (
+      if text.size == 1 (
         pattern = PEG.Pattern.Byte(T).new(text.byte_at!(0))
         return pattern // TODO: make these two lines a single line
       )
@@ -23,7 +23,7 @@
   :: Check for exact matches with the given Unicode codepoint.
   :: As an optimization, returns `PEG.Pattern.Byte` if the string is one byte.
   :fun non char(codepoint U32)
-    if (codepoint < 0x80) (
+    if codepoint < 0x80 (
       return PEG.Pattern.Byte(T).new(codepoint.u8)
     )
     PEG.Pattern.Literal(T).new("\(codepoint.format.unicode)")
