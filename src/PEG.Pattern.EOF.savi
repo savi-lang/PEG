@@ -27,7 +27,7 @@
     return result if result.is_fail
 
     // Fail if the end of the source hasn't been reached yet.
-    if (offset + result.length != source.size) (
+    if offset + result.length != source.size (
       state.observe_fail(offset + result.length + 1, @child)
       return _Result(T).fail(0, @)
     )

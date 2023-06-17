@@ -39,9 +39,9 @@
       // failure or end the loop successfully, depending on whether we've
       // already met the specified minimum number of occurrences.
       if result.is_fail (
-        break if (count >= @min)
+        break if count >= @min
 
-        return (result + total_length)
+        return result + total_length
       )
 
       // Add to our running total of consumed bytes and capture tokens (if any).
@@ -54,7 +54,7 @@
       // parsing zero-length patterns and we've already met our minimum.
       // This prevents zero-length matches from being able to infinitely loop.
       count += 1
-      break if (count > @min && result.length == 0)
+      break if count > @min && result.length == 0
     )
 
     _Result(T).success(total_length, --tokens)

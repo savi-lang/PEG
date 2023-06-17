@@ -24,7 +24,7 @@
     state _State(T)
   ) _Result(T)
     try (
-      error! if (source.byte_at!(offset) != @expected)
+      error! if source.byte_at!(offset) != @expected
       _Result(T).success(1)
     |
       _Result(T).fail(0, @)

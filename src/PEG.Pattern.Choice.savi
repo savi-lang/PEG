@@ -15,7 +15,7 @@
     @new(--children)
 
   :fun description
-    if (@children.size < 2) (
+    if @children.size < 2 (
       try (@children[0]!.description | "empty choice!")
     |
       out = String.new_iso
@@ -39,7 +39,7 @@
   :fun into_string(out String'ref) None
     out << "("
     @children.each_with_index -> (child, index |
-      if index.is_nonzero (out << " / ")
+      if index.is_nonzero out << " / "
       child.into_string(out)
     )
     out << ")"
@@ -61,7 +61,7 @@
       )
 
       // On failure, record the info if this is the longest failure yet seen.
-      if (result.length > fail_result.length) (
+      if result.length > fail_result.length (
         fail_result = result
       )
     )

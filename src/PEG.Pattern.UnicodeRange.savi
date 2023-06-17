@@ -40,7 +40,7 @@
         // So we'll check if it's in the range of codepoints we were expecting.
         if utf8_state.is_done (
           codepoint = utf8_state.codepoint
-          if (codepoint >= @min && codepoint <= @max) (
+          if codepoint >= @min && codepoint <= @max (
             return _Result(T).success(current_offset - offset + 1)
           |
             return _Result(T).fail(0, @)

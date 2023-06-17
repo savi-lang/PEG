@@ -30,8 +30,8 @@
 
   :fun success_tokens! Array(PEG.Token(T))'val
     data = @_data
-    return data if (data <: Array(PEG.Token(T))'val)
-    return [data] if (data <: PEG.Token(T))
+    return data if data <: Array(PEG.Token(T))'val
+    return [data] if data <: PEG.Token(T)
     []
 
   :fun fail_pattern!: @_data.as!(PEG.Pattern(T))
@@ -53,7 +53,7 @@
     data = @_data
     case (
     | data <: PEG.Token(T) |
-      if (list <: Array(PEG.Token(T))'iso) (
+      if list <: Array(PEG.Token(T))'iso (
         list << data
       |
         new_list = Array(PEG.Token(T)).new_iso
@@ -61,7 +61,7 @@
         list = --new_list
       )
     | data <: Array(PEG.Token(T))'val |
-      if (list <: Array(PEG.Token(T))'iso) (
+      if list <: Array(PEG.Token(T))'iso (
         data.each -> (token | list << token)
       |
         list = data.clone()
